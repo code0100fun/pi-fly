@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+    <style type="text/css">
+      body {
+        padding-top: 60px;
+        padding-bottom: 40px;
+      }
+      .sidebar-nav {
+        padding: 9px 0;
+      }
+    </style>
+    <link href="css/bootstrap-responsive.css" rel="stylesheet">
+    <script type="text/javascript" src="jquery.min.js"></script>
+    <script type="text/javascript" src="js/bootstrap.js"></script>
+    <script type="text/javascript" src="three.js"></script>
+    <script type="text/javascript" src="RequestAnimationFrame.js"></script>
+    <script type="text/javascript" src="tricopter.js"></script>
+    <script type="text/javascript" src="faye/client.js"></script>
+  </head>
+  <body>
+
+    <div class="navbar navbar-inverse navbar-fixed-top">
+      <div class="navbar-inner">
+        <div class="container-fluid">
+          <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </a>
+          <a class="brand" href="#">Pi Fly</a>
+          <div class="nav-collapse collapse">
+            <p class="navbar-text pull-right">
+              Logged in as <a href="#" class="navbar-link">code0100fun</a>
+            </p>
+            <ul class="nav">
+              <li class="active"><a href="#">Home</a></li>
+              <li><a href="#about">About</a></li>
+              <li><a href="#contact">Contact</a></li>
+            </ul>
+          </div><!--/.nav-collapse -->
+        </div>
+      </div>
+    </div>
+
+    <div class="container-fluid">
+      <div class="row-fluid">
+        <div class="span3">
+          <div class="well sidebar-nav">
+            <ul class="nav nav-list">
+              <li class="nav-header">Sidebar</li>
+              <li class="active"><a href="#">Link</a></li>
+              <li><a href="#">Link</a></li>
+              <li><a href="#">Link</a></li>
+              <li><a href="#">Link</a></li>
+              <li class="nav-header">Sidebar</li>
+              <li><a href="#">Link</a></li>
+            </ul>
+          </div><!--/.well -->
+        </div><!--/span-->
+        <div class="span9">
+          <div class="row-fluid">
+            <div class="span2">
+              <h2>Euler</h2>
+              <p><label>Pitch</label> <span name="imu-pitch"></span></p>
+              <p><label>Roll</label> <span name="imu-roll"></span></p>
+              <p><label>Yaw</label> <span name="imu-yaw"></span></p>
+            </div><!--/span-->
+            <div class="span2">
+              <h2>PWM</h2>
+              <p><label>Motor 1</label> <span name="pwm-motor1"></span></p>
+              <p><label>Motor 2</label> <span name="pwm-motor2"></span></p>
+              <p><label>Motor 3</label> <span name="pwm-motor3"></span></p>
+              <p><label>Yaw</label> <span name="pwm-yaw"></span></p>
+            </div><!--/span-->
+            <div class="span6">
+              <div class="simulator" id="glcanvas"></div>
+            </div><!--/span-->
+          </div><!--/row-->
+        
+        </div><!--/span-->
+      </div><!--/row-->
+
+      <hr>
+
+      <footer>
+        <p>&copy; Chase McCarthy 2012</p>
+      </footer>
+
+    </div><!--/.fluid-container-->
+
+    <script type="text/javascript">
+      var client = new Faye.Client('http://localhost:8000/faye');
+
+      client.subscribe('/imu', function(state){
+        for(var key in state){
+          var val = state[key];
+          $('[name="imu-'+key+'"]').text(val);
+        }
+      });
+
+      client.subscribe('/pwm', function(state){
+        for(var key in state){
+          var val = state[key];
+          $('[name="pwm-'+key+'"]').text(val);
+          updateSimulation()
+        }
+      });
+
+      var updateSimulation = function(){
+        var pwmMotor1 = ($('[name="pwm-motor1"]').text()-500)/2000;
+        simulation.tricopter.motor1.vector.setLength(pwmMotor1*100);
+        var pwmMotor2 = ($('[name="pwm-motor2"]').text()-500)/2000;
+        simulation.tricopter.motor2.vector.setLength(pwmMotor2*100);
+        var pwmMotor3 = ($('[name="pwm-motor3"]').text()-500)/2000;
+        simulation.tricopter.motor3.vector.setLength(pwmMotor3*100);
+        var pwmYaw = ($('[name="pwm-yaw"]').text()-1500)/1000;
+        simulation.tricopter.motor1.motor.rotation.x = pwmYaw * Math.PI/4;
+
+        var imuRoll = $('[name="imu-roll"]').text();
+        simulation.tricopter.mesh.rotation.z = imuRoll;
+        var imuPitch = $('[name="imu-pitch"]').text();
+        simulation.tricopter.mesh.rotation.x = imuPitch;
+        var imuYaw = $('[name="imu-yaw"]').text();
+        simulation.tricopter.mesh.rotation.y = imuYaw;
+      }
+
+      var simulation = new Simulation({el: $('#glcanvas'), width: 400, height: 400});
+      
+      window.addEventListener("load", simulation.init);
+    </script>
+  </body>
+</html>
